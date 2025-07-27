@@ -1,13 +1,13 @@
-# OpenPilot Dashcam Viewer Flutter App
+# OpenPilot Dashcam Viewer
 
-这是一个跨平台的 Flutter 应用程序，用于查看 OpenPilot 行车记录仪视频。支持 Windows、macOS、Android 和 iOS 四个平台，并且能够直接播放 HEVC 格式视频，减轻服务器转码压力。
+一个跨平台的 Flutter 应用程序，用于查看 OpenPilot 行车记录仪视频。支持 Windows、macOS、Android 和 iOS 平台，原生支持 HEVC 格式视频播放。
 
 ## 功能特性
 
-### 🎥 原生 HEVC 支持
-- 直接播放 HEVC 格式视频，无需服务器转码
-- 降低服务器性能要求
-- 更好的视频质量和播放性能
+### 🎥 视频播放
+- 原生 HEVC 格式支持，无需服务器转码
+- 高质量视频播放体验
+- 多摄像头视角切换（前置、后置等）
 
 ### 📱 跨平台支持
 - **Windows**: 桌面应用程序
@@ -16,56 +16,42 @@
 - **iOS**: 移动应用程序
 
 ### 🌟 核心功能
-- 视频段浏览和搜索
-- 多摄像头视角切换
-- 日期范围筛选
-- 摄像头类型筛选
-- 全屏播放支持
-- 自动播放设置
-- 深色/浅色主题切换
+- 路线列表浏览
+- 连续路线播放
+- 服务器自动发现和手动配置
+- 深色/浅色主题自动切换
 
 ## 安装和使用
 
 ### 前置要求
 
-1. **Flutter SDK**: 版本 3.0.0 或更高
-2. **Dart SDK**: 版本 3.0.0 或更高
-3. **平台特定要求**:
+1. **Flutter SDK**: 版本 3.8.0 或更高
+2. **平台特定要求**:
    - **Windows**: Visual Studio 2022 或 Visual Studio Build Tools
    - **macOS**: Xcode 14 或更高
    - **Android**: Android Studio 和 Android SDK
    - **iOS**: Xcode 14 或更高
 
-### 安装 Flutter
+### 快速开始
 
-#### macOS (使用 Homebrew)
+#### 使用自动化脚本（推荐）
 ```bash
-brew install --cask flutter
+./setup.sh
 ```
 
-#### 手动安装
-1. 从 [Flutter 官网](https://flutter.dev/docs/get-started/install) 下载 Flutter SDK
-2. 解压到合适的目录
-3. 将 Flutter bin 目录添加到 PATH 环境变量
+#### 手动设置
 
-### 项目设置
-
-1. **进入项目目录**:
-```bash
-cd system/dashcam_server/app
-```
-
-2. **获取依赖**:
+1. **获取依赖**:
 ```bash
 flutter pub get
 ```
 
-3. **生成代码**:
+2. **生成代码**:
 ```bash
 flutter packages pub run build_runner build
 ```
 
-4. **检查环境**:
+3. **检查环境**:
 ```bash
 flutter doctor
 ```
@@ -73,98 +59,71 @@ flutter doctor
 ### 运行应用
 
 #### 开发模式
-
-**桌面平台 (macOS)**:
 ```bash
-flutter run -d macos
-```
+# 查看可用设备
+flutter devices
 
-**桌面平台 (Windows)**:
-```bash
-flutter run -d windows
-```
-
-**移动平台 (Android)**:
-```bash
-flutter run -d android
-```
-
-**移动平台 (iOS)**:
-```bash
-flutter run -d ios
+# 运行到指定平台
+flutter run -d macos     # macOS
+flutter run -d windows   # Windows
+flutter run -d android   # Android
+flutter run -d ios       # iOS
 ```
 
 #### 构建发布版本
-
-**macOS**:
 ```bash
-flutter build macos --release
-```
-
-**Windows**:
-```bash
-flutter build windows --release
-```
-
-**Android APK**:
-```bash
-flutter build apk --release
-```
-
-**iOS**:
-```bash
-flutter build ios --release
+flutter build macos --release    # macOS
+flutter build windows --release  # Windows
+flutter build apk --release      # Android APK
+flutter build ios --release      # iOS
 ```
 
 ## 配置
 
 ### 服务器设置
 
-1. 启动应用后，进入设置页面
-2. 配置服务器地址（默认: `http://localhost:8009`）
-3. 点击"测试连接"确保连接正常
+应用支持多种服务器连接方式：
 
-### 视频播放设置
+1. **自动发现**: 应用会自动扫描局域网中的服务器
+2. **手动配置**: 在设置中输入服务器地址（默认: `http://localhost:8009`）
+3. **快速连接**: 使用预设的服务器地址快速连接
 
-- **优先使用 HEVC**: 启用后优先播放原生 HEVC 格式
-- **自动播放**: 打开视频时自动开始播放
-- **视频质量**: 选择播放质量（自动/高/中/低）
+详细的服务器配置说明请参考 [SERVER_CONFIGURATION.md](SERVER_CONFIGURATION.md)。
 
 ## 项目结构
 
 ```
 lib/
-├── main.dart                 # 应用入口
-├── models/                   # 数据模型
+├── main.dart                           # 应用入口
+├── models/                             # 数据模型
 │   ├── dashcam_models.dart
 │   └── dashcam_models.g.dart
-├── providers/                # 状态管理
+├── providers/                          # 状态管理
+│   ├── app_settings_provider.dart
 │   ├── dashcam_provider.dart
-│   └── settings_provider.dart
-├── screens/                  # 页面
-│   ├── home_screen.dart
-│   ├── video_player_screen.dart
-│   └── settings_screen.dart
-├── services/                 # API 服务
-│   └── dashcam_api_service.dart
-├── utils/                    # 工具类
+│   └── simple_dashcam_provider.dart
+├── screens/                            # 页面
+│   ├── enhanced_route_player_screen.dart
+│   ├── new_routes_list_screen.dart
+│   ├── route_player_screen.dart
+│   ├── routes_screen.dart
+│   └── video_player_screen.dart
+├── services/                           # API 服务
+│   ├── dashcam_api_service.dart
+│   └── server_discovery_service.dart
+├── utils/                              # 工具类
 │   └── theme.dart
-└── widgets/                  # 自定义组件
-    ├── segment_card.dart
-    ├── filter_bar.dart
-    └── connection_status.dart
+└── widgets/                            # 自定义组件
+    └── quick_connect_dialog.dart
 ```
 
-## API 接口
+## 技术栈
 
-应用使用以下 API 端点：
-
-- `GET /api/info` - 获取系统信息
-- `GET /api/routes` - 获取路线列表
-- `GET /api/segments` - 获取视频段列表
-- `GET /api/video/raw/{segment_id}/{camera}` - 获取原生 HEVC 视频
-- `GET /api/video/info/{segment_id}/{camera}` - 获取视频信息
-- `GET /api/hls/{segment_id}/{camera}/playlist.m3u8` - HLS 播放列表（备用）
+- **Flutter**: 跨平台UI框架
+- **media_kit**: 高性能视频播放器，支持HEVC
+- **Provider**: 状态管理
+- **go_router**: 路由管理
+- **dio**: HTTP客户端
 
 ## 故障排除
 
@@ -176,30 +135,25 @@ lib/
 2. **依赖安装失败**
    - 运行 `flutter clean` 然后重新 `flutter pub get`
 
-3. **视频播放失败**
-   - 检查服务器连接
-   - 确认服务器支持 HEVC 格式
-   - 尝试切换到 HLS 模式
+3. **无法连接服务器**
+   - 检查服务器是否正在运行
+   - 使用自动发现功能扫描网络
+   - 手动输入正确的服务器地址
 
-4. **构建失败**
+4. **视频播放失败**
+   - 确认服务器支持 HEVC 格式
+   - 检查网络连接稳定性
+
+5. **构建失败**
    - 运行 `flutter doctor` 检查环境
    - 确保所有平台工具已正确安装
 
 ### 调试模式
-
-启用调试日志：
 ```bash
 flutter run --verbose
 ```
 
 ## 开发
-
-### 添加新功能
-
-1. 在相应的目录下创建新文件
-2. 更新 Provider 状态管理
-3. 添加必要的 API 调用
-4. 更新 UI 组件
 
 ### 代码生成
 
@@ -207,6 +161,13 @@ flutter run --verbose
 ```bash
 flutter packages pub run build_runner build --delete-conflicting-outputs
 ```
+
+### 添加新功能
+
+1. 在相应的目录下创建新文件
+2. 更新 Provider 状态管理
+3. 添加必要的 API 调用
+4. 更新 UI 组件
 
 ## 许可证
 
