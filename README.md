@@ -81,14 +81,7 @@ flutter build ios --release      # iOS
 ## 配置
 
 ### 服务器设置
-
-应用支持多种服务器连接方式：
-
-1. **自动发现**: 应用会自动扫描局域网中的服务器
-2. **手动配置**: 在设置中输入服务器地址（默认: `http://localhost:8009`）
-3. **快速连接**: 使用预设的服务器地址快速连接
-
-详细的服务器配置说明请参考 [SERVER_CONFIGURATION.md](SERVER_CONFIGURATION.md)。
+**手动配置**: 在设置中输入服务器地址（默认: `http://localhost:8009`）
 
 ## 项目结构
 
