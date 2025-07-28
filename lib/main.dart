@@ -9,12 +9,24 @@ import 'providers/simple_dashcam_provider.dart';
 import 'providers/app_settings_provider.dart';
 import 'screens/new_routes_list_screen.dart';
 import 'screens/enhanced_route_player_screen.dart';
+import 'utils/permissions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize MediaKit for video playback
   MediaKit.ensureInitialized();
+
+  // Request permissions for media_kit on Android
+  if (UniversalPlatform.isAndroid) {
+    print('🔐 请求Android权限...');
+    final permissionsGranted = await PermissionUtils.requestMediaKitPermissions();
+    if (!permissionsGranted) {
+      print('❌ 权限被拒绝，应用可能无法正常播放视频');
+    } else {
+      print('✅ 权限已授予');
+    }
+  }
 
   // Configure window for desktop platforms
   if (UniversalPlatform.isDesktop) {
