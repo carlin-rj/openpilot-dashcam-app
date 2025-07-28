@@ -45,11 +45,23 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
     final settings = context.read<AppSettingsProvider>();
 
     setState(() {
-      _statusText = '正在加载...';
+      _statusText = '正在初始化...';
     });
 
     try {
-      // 确保使用正确的服务器URL
+      // 等待设置初始化完成
+      while (!settings.isInitialized) {
+        print('🔧 等待设置初始化完成...');
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      print('🔧 设置初始化完成，当前保存的服务器URL: ${settings.serverUrl}');
+
+      setState(() {
+        _statusText = '正在连接服务器...';
+      });
+
+      // 使用正确的服务器URL
       provider.updateServerUrl(settings.serverUrl);
 
       await Future.wait([
