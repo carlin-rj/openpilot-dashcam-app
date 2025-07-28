@@ -3,11 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/dashcam_provider.dart';
-import '../providers/settings_provider.dart';
+import '../providers/app_settings_provider.dart';
 import '../models/dashcam_models.dart';
-import '../widgets/route_card.dart';
-import '../widgets/filter_bar.dart';
-import '../widgets/connection_status.dart';
 import '../utils/theme.dart';
 
 class RoutesScreen extends StatefulWidget {
@@ -45,13 +42,10 @@ class _RoutesScreenState extends State<RoutesScreen> {
 
   Future<void> _initializeData() async {
     final provider = context.read<DashcamProvider>();
-    final settings = context.read<SettingsProvider>();
+    final settings = context.read<AppSettingsProvider>();
 
-    // Update server URL and timeout
-    provider.updateServerUrl(
-      settings.serverUrl,
-      timeoutSeconds: settings.connectionTimeout,
-    );
+    // Update server URL
+    provider.updateServerUrl(settings.serverUrl);
 
     // Load initial data
     await Future.wait([
@@ -154,12 +148,6 @@ class _RoutesScreenState extends State<RoutesScreen> {
       ),
       body: Column(
         children: [
-          // Connection status
-          const ConnectionStatus(),
-
-          // Filter bar
-          const FilterBar(),
-
           // Routes list
           Expanded(
             child: Consumer<DashcamProvider>(
@@ -241,9 +229,13 @@ class _RoutesScreenState extends State<RoutesScreen> {
                       }
 
                       final route = provider.routes[index];
-                      return RouteCard(
-                        route: route,
-                        onTap: () => _showRouteOptions(route),
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: ListTile(
+                          title: Text(route.routeName),
+                          subtitle: Text('${route.segmentCount} segments'),
+                          onTap: () => _showRouteOptions(route),
+                        ),
                       );
                     },
                   ),

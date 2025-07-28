@@ -6,7 +6,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 import '../providers/dashcam_provider.dart';
-import '../providers/settings_provider.dart';
+
 import '../models/dashcam_models.dart';
 import '../utils/theme.dart';
 
@@ -56,7 +56,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Future<void> _loadVideoData() async {
     try {
       final provider = context.read<DashcamProvider>();
-      final settings = context.read<SettingsProvider>();
       
       // Get segment info
       _segment = await provider.getSegmentDetail(widget.segmentId);
@@ -72,23 +71,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         return;
       }
 
-      // Choose video URL based on settings
-      String videoUrl;
-      if (settings.preferHevc && _videoInfo?.video?.codec == 'hevc') {
-        // Use raw HEVC if supported
-        videoUrl = provider.getRawVideoUrl(widget.segmentId, widget.camera);
-      } else {
-        // Use HLS stream
-        videoUrl = provider.getHlsPlaylistUrl(widget.segmentId, widget.camera);
-      }
+      // Use raw HEVC video URL
+      String videoUrl = provider.getRawVideoUrl(widget.segmentId, widget.camera);
 
       // Load video
       await _player.open(Media(videoUrl));
       
-      // Auto play if enabled
-      if (settings.autoPlay) {
-        await _player.play();
-      }
+      // Auto play
+      await _player.play();
 
       setState(() {
         _isLoading = false;

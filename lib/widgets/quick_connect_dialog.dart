@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/settings_provider.dart';
+import '../providers/app_settings_provider.dart';
 import '../providers/dashcam_provider.dart';
 import '../services/server_discovery_service.dart';
 import '../utils/theme.dart';
@@ -25,7 +25,7 @@ class _QuickConnectDialogState extends State<QuickConnectDialog> {
   @override
   void initState() {
     super.initState();
-    final settings = context.read<SettingsProvider>();
+    final settings = context.read<AppSettingsProvider>();
     _urlController.text = settings.serverUrl;
     
     // 自动开始发现服务器
@@ -280,12 +280,9 @@ class _QuickConnectDialogState extends State<QuickConnectDialog> {
 
     try {
       final dashcamProvider = context.read<DashcamProvider>();
-      final settings = context.read<SettingsProvider>();
-      
-      dashcamProvider.updateServerUrl(
-        _urlController.text.trim(),
-        timeoutSeconds: settings.connectionTimeout,
-      );
+      final settings = context.read<AppSettingsProvider>();
+
+      dashcamProvider.updateServerUrl(_urlController.text.trim());
       
       final isConnected = await dashcamProvider.testConnection();
       

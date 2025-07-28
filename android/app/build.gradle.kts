@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.openpilot.dashcam_viewer"
+    namespace = "com.example.dashcam_viewer"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.openpilot.dashcam_viewer"
+        applicationId = "com.example.dashcam_viewer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
