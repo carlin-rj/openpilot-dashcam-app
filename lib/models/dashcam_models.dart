@@ -2,6 +2,65 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'dashcam_models.g.dart';
 
+/// 摄像头类型枚举
+enum CameraType {
+  @JsonValue('fcamera')
+  fcamera,
+
+  @JsonValue('dcamera')
+  dcamera,
+
+  @JsonValue('ecamera')
+  ecamera,
+
+  @JsonValue('qcamera')
+  qcamera;
+
+  /// 获取摄像头显示名称
+  String get displayName {
+    switch (this) {
+      case CameraType.fcamera:
+        return '前置';
+      case CameraType.dcamera:
+        return '驾驶员';
+      case CameraType.ecamera:
+        return '广角';
+      case CameraType.qcamera:
+        return '低质量';
+    }
+  }
+
+  /// 从字符串创建CameraType
+  static CameraType? fromString(String value) {
+    switch (value) {
+      case 'fcamera':
+        return CameraType.fcamera;
+      case 'dcamera':
+        return CameraType.dcamera;
+      case 'ecamera':
+        return CameraType.ecamera;
+      case 'qcamera':
+        return CameraType.qcamera;
+      default:
+        return null;
+    }
+  }
+
+  /// 转换为字符串
+  String get value {
+    switch (this) {
+      case CameraType.fcamera:
+        return 'fcamera';
+      case CameraType.dcamera:
+        return 'dcamera';
+      case CameraType.ecamera:
+        return 'ecamera';
+      case CameraType.qcamera:
+        return 'qcamera';
+    }
+  }
+}
+
 @JsonSerializable()
 class DashcamInfo {
   @JsonKey(name: 'total_routes')
@@ -14,7 +73,7 @@ class DashcamInfo {
   final int totalSize;
 
   @JsonKey(name: 'available_cameras')
-  final List<String> availableCameras;
+  final List<CameraType> availableCameras;
 
   @JsonKey(name: 'date_range')
   final List<String> dateRange;
@@ -51,7 +110,7 @@ class RouteInfo {
   final int totalSize;
 
   @JsonKey(name: 'available_cameras')
-  final List<String> availableCameras;
+  final List<CameraType> availableCameras;
 
   const RouteInfo({
     this.routeName = '',
@@ -86,7 +145,7 @@ class RouteDetailInfo {
   final int totalSize;
 
   @JsonKey(name: 'available_cameras')
-  final List<String> availableCameras;
+  final List<CameraType> availableCameras;
 
   final List<SegmentInfo> segments;
 
@@ -121,7 +180,7 @@ class SegmentInfo {
   final int duration;
   final int size;
 
-  final Map<String, String> cameras;
+  final Map<CameraType, String> cameras;
 
   @JsonKey(name: 'has_audio')
   final bool hasAudio;
@@ -156,7 +215,7 @@ class SegmentInfo {
   }
 
   // 获取单个摄像头的文件大小（估算）
-  Map<String, int> get fileSizes {
+  Map<CameraType, int> get fileSizes {
     final cameraCount = cameras.length;
     if (cameraCount == 0) return {};
 
@@ -177,7 +236,7 @@ class VideoInfo {
   @JsonKey(name: 'segment_id')
   final String segmentId;
 
-  final String camera;
+  final CameraType camera;
 
   @JsonKey(name: 'file_size')
   final int fileSize;
@@ -198,7 +257,7 @@ class VideoInfo {
 
   const VideoInfo({
     this.segmentId = '',
-    this.camera = '',
+    this.camera = CameraType.fcamera,
     this.fileSize = 0,
     this.duration = 0.0,
     this.formatName = '',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/dashcam_models.dart';
 
 class AppTheme {
   static const Color primaryColor = Color(0xFF2196F3);
@@ -118,6 +119,19 @@ class AppColors {
         return qcameraColor;
       default:
         return Colors.grey;
+    }
+  }
+
+  static Color getCameraColorFromType(CameraType camera) {
+    switch (camera) {
+      case CameraType.fcamera:
+        return fcameraColor;
+      case CameraType.dcamera:
+        return dcameraColor;
+      case CameraType.ecamera:
+        return ecameraColor;
+      case CameraType.qcamera:
+        return qcameraColor;
     }
   }
 }

@@ -12,7 +12,7 @@ DashcamInfo _$DashcamInfoFromJson(Map<String, dynamic> json) => DashcamInfo(
   totalSize: (json['total_size'] as num?)?.toInt() ?? 0,
   availableCameras:
       (json['available_cameras'] as List<dynamic>?)
-          ?.map((e) => e as String)
+          ?.map((e) => $enumDecode(_$CameraTypeEnumMap, e))
           .toList() ??
       const [],
   dateRange:
@@ -27,9 +27,18 @@ Map<String, dynamic> _$DashcamInfoToJson(DashcamInfo instance) =>
       'total_routes': instance.totalRoutes,
       'total_segments': instance.totalSegments,
       'total_size': instance.totalSize,
-      'available_cameras': instance.availableCameras,
+      'available_cameras': instance.availableCameras
+          .map((e) => _$CameraTypeEnumMap[e]!)
+          .toList(),
       'date_range': instance.dateRange,
     };
+
+const _$CameraTypeEnumMap = {
+  CameraType.fcamera: 'fcamera',
+  CameraType.dcamera: 'dcamera',
+  CameraType.ecamera: 'ecamera',
+  CameraType.qcamera: 'qcamera',
+};
 
 RouteInfo _$RouteInfoFromJson(Map<String, dynamic> json) => RouteInfo(
   routeName: json['route_name'] as String? ?? '',
@@ -39,7 +48,7 @@ RouteInfo _$RouteInfoFromJson(Map<String, dynamic> json) => RouteInfo(
   totalSize: (json['total_size'] as num?)?.toInt() ?? 0,
   availableCameras:
       (json['available_cameras'] as List<dynamic>?)
-          ?.map((e) => e as String)
+          ?.map((e) => $enumDecode(_$CameraTypeEnumMap, e))
           .toList() ??
       const [],
 );
@@ -50,7 +59,9 @@ Map<String, dynamic> _$RouteInfoToJson(RouteInfo instance) => <String, dynamic>{
   'end_time': instance.endTime,
   'segment_count': instance.segmentCount,
   'total_size': instance.totalSize,
-  'available_cameras': instance.availableCameras,
+  'available_cameras': instance.availableCameras
+      .map((e) => _$CameraTypeEnumMap[e]!)
+      .toList(),
 };
 
 RouteDetailInfo _$RouteDetailInfoFromJson(Map<String, dynamic> json) =>
@@ -62,7 +73,7 @@ RouteDetailInfo _$RouteDetailInfoFromJson(Map<String, dynamic> json) =>
       totalSize: (json['total_size'] as num?)?.toInt() ?? 0,
       availableCameras:
           (json['available_cameras'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.map((e) => $enumDecode(_$CameraTypeEnumMap, e))
               .toList() ??
           const [],
       segments:
@@ -79,7 +90,9 @@ Map<String, dynamic> _$RouteDetailInfoToJson(RouteDetailInfo instance) =>
       'end_time': instance.endTime,
       'segment_count': instance.segmentCount,
       'total_size': instance.totalSize,
-      'available_cameras': instance.availableCameras,
+      'available_cameras': instance.availableCameras
+          .map((e) => _$CameraTypeEnumMap[e]!)
+          .toList(),
       'segments': instance.segments,
     };
 
@@ -92,7 +105,7 @@ SegmentInfo _$SegmentInfoFromJson(Map<String, dynamic> json) => SegmentInfo(
   size: (json['size'] as num?)?.toInt() ?? 0,
   cameras:
       (json['cameras'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(k, e as String),
+        (k, e) => MapEntry($enumDecode(_$CameraTypeEnumMap, k), e as String),
       ) ??
       const {},
   hasAudio: json['has_audio'] as bool? ?? false,
@@ -107,14 +120,18 @@ Map<String, dynamic> _$SegmentInfoToJson(SegmentInfo instance) =>
       'timestamp': instance.timestamp,
       'duration': instance.duration,
       'size': instance.size,
-      'cameras': instance.cameras,
+      'cameras': instance.cameras.map(
+        (k, e) => MapEntry(_$CameraTypeEnumMap[k]!, e),
+      ),
       'has_audio': instance.hasAudio,
       'video_info': instance.videoInfo,
     };
 
 VideoInfo _$VideoInfoFromJson(Map<String, dynamic> json) => VideoInfo(
   segmentId: json['segment_id'] as String? ?? '',
-  camera: json['camera'] as String? ?? '',
+  camera:
+      $enumDecodeNullable(_$CameraTypeEnumMap, json['camera']) ??
+      CameraType.fcamera,
   fileSize: (json['file_size'] as num?)?.toInt() ?? 0,
   duration: (json['duration'] as num?)?.toDouble() ?? 0.0,
   formatName: json['format_name'] as String? ?? '',
@@ -130,7 +147,7 @@ VideoInfo _$VideoInfoFromJson(Map<String, dynamic> json) => VideoInfo(
 
 Map<String, dynamic> _$VideoInfoToJson(VideoInfo instance) => <String, dynamic>{
   'segment_id': instance.segmentId,
-  'camera': instance.camera,
+  'camera': _$CameraTypeEnumMap[instance.camera]!,
   'file_size': instance.fileSize,
   'duration': instance.duration,
   'format_name': instance.formatName,

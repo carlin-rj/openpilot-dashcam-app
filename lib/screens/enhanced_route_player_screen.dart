@@ -26,7 +26,7 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
   RouteDetailInfo? _routeDetail;
   Map<String, dynamic>? _videoSegmentsData; // 新的视频段数据
   int _currentSegmentIndex = 0;
-  String _currentCamera = 'fcamera';
+  CameraType _currentCamera = CameraType.fcamera;
   bool _isControlsVisible = true;
   bool _isLoading = true;
   String? _error;
@@ -165,8 +165,8 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
       }
 
       // 如果qcamera没有有效时长，再尝试当前摄像头
-      if (segmentDuration == 60.0 && cameras.containsKey(_currentCamera)) {
-        final cameraInfo = cameras[_currentCamera];
+      if (segmentDuration == 60.0 && cameras.containsKey(_currentCamera.value)) {
+        final cameraInfo = cameras[_currentCamera.value];
         final videoInfo = cameraInfo['video_info'];
         if (videoInfo != null && videoInfo['duration'] != null) {
           final duration = (videoInfo['duration'] as num).toDouble();
@@ -181,7 +181,7 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
       if (segmentDuration == 60.0) {
         print('⚠️ 段 $i qcamera和$_currentCamera都没有有效时长，尝试其他摄像头');
         for (final camera in cameras.keys) {
-          if (camera == 'qcamera' || camera == _currentCamera) continue;
+          if (camera == 'qcamera' || camera == _currentCamera.value) continue;
 
           final otherCameraInfo = cameras[camera];
           final otherVideoInfo = otherCameraInfo['video_info'];
@@ -250,8 +250,8 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
       // 使用 video_info 中的真实时长，如果没有则使用默认值
       double segmentDuration = _routeDetail!.segments[i].duration.toDouble();
       if (_routeDetail!.segments[i].videoInfo.isNotEmpty &&
-          _routeDetail!.segments[i].videoInfo.containsKey(_currentCamera)) {
-        final videoInfo = _routeDetail!.segments[i].videoInfo[_currentCamera];
+          _routeDetail!.segments[i].videoInfo.containsKey(_currentCamera.value)) {
+        final videoInfo = _routeDetail!.segments[i].videoInfo[_currentCamera.value];
         if (videoInfo is Map && videoInfo.containsKey('duration')) {
           segmentDuration = (videoInfo['duration'] as num).toDouble();
         }
@@ -475,7 +475,7 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
 
     final segment = _routeDetail!.segments[index];
     final provider = context.read<SimpleDashcamProvider>();
-    final videoUrl = provider.apiService.getRawVideoUrl(segment.segmentId, _currentCamera);
+    final videoUrl = provider.apiService.getRawVideoUrl(segment.segmentId, _currentCamera.value);
 
     print('🎬 使用摄像头: $_currentCamera, URL: $videoUrl');
     if (seekToPosition != null) {
@@ -546,7 +546,7 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
     print('🔄 自动播放: ${_autoPlay ? "开启" : "关闭"}');
   }
 
-  void _switchCamera(String camera) {
+  void _switchCamera(CameraType camera) {
     if (_currentCamera != camera) {
       setState(() {
         _currentCamera = camera;
@@ -901,7 +901,7 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
                         ),
                       ),
                       child: Text(
-                        camera == 'fcamera' ? '前置' : '低质量',
+                        camera.displayName,
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -1215,8 +1215,8 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
     final segment = segments[index];
     final cameras = segment['cameras'] as Map<String, dynamic>;
 
-    if (cameras.containsKey(_currentCamera)) {
-      final cameraInfo = cameras[_currentCamera];
+    if (cameras.containsKey(_currentCamera.value)) {
+      final cameraInfo = cameras[_currentCamera.value];
       final thumbnailUrl = cameraInfo['thumbnail'];
 
       if (thumbnailUrl != null) {
@@ -1620,8 +1620,8 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
     // 使用 video_info 中的真实时长，如果没有则使用默认值
     double segmentDuration = segment.duration.toDouble();
     if (segment.videoInfo.isNotEmpty &&
-        segment.videoInfo.containsKey(_currentCamera)) {
-      final videoInfo = segment.videoInfo[_currentCamera];
+        segment.videoInfo.containsKey(_currentCamera.value)) {
+      final videoInfo = segment.videoInfo[_currentCamera.value];
       if (videoInfo is Map && videoInfo.containsKey('duration')) {
         segmentDuration = (videoInfo['duration'] as num).toDouble();
       }

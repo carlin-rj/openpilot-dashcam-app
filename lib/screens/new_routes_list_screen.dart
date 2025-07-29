@@ -488,15 +488,7 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
                       Row(
                         children: [
                           Text(
-                            '${route.segmentCount} 段',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            '1 分钟',
+                            '总共${route.segmentCount} 段',
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey[600],
