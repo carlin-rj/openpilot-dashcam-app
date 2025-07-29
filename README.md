@@ -1,4 +1,4 @@
-# OpenPilot Dashcam Viewer
+# OpenpilotCam
 
 一个跨平台的 Flutter 应用程序，用于查看 OpenPilot 行车记录仪视频。支持 Windows、macOS、Android 和 iOS 平台，原生支持 HEVC 格式视频播放。
 

@@ -1,5 +1,5 @@
-name: dashcam_viewer
-description: OpenPilot Dashcam Viewer - Cross-platform app for viewing dashcam videos with native HEVC support
+name: PilotCam
+description: PilotCam - Cross-platform app for viewing dashcam videos with native HEVC support
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 

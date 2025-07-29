@@ -149,23 +149,10 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
       final cameras = segment['cameras'] as Map<String, dynamic>;
 
       // 优先使用qcamera的时长，因为HEVC可能获取不到正确时长
-      double segmentDuration = 60.0; // 默认值
-
-      // 首先尝试qcamera
-      if (cameras.containsKey('qcamera')) {
-        final qcameraInfo = cameras['qcamera'];
-        final qcameraVideoInfo = qcameraInfo['video_info'];
-        if (qcameraVideoInfo != null && qcameraVideoInfo['duration'] != null) {
-          final qcameraDuration = (qcameraVideoInfo['duration'] as num).toDouble();
-          if (qcameraDuration > 0) {
-            segmentDuration = qcameraDuration;
-            print('✅ 段 $i 使用qcamera时长: ${segmentDuration}s');
-          }
-        }
-      }
+      double segmentDuration = 0.0; // 默认值
 
       // 如果qcamera没有有效时长，再尝试当前摄像头
-      if (segmentDuration == 60.0 && cameras.containsKey(_currentCamera.value)) {
+      if (cameras.containsKey(_currentCamera.value)) {
         final cameraInfo = cameras[_currentCamera.value];
         final videoInfo = cameraInfo['video_info'];
         if (videoInfo != null && videoInfo['duration'] != null) {
@@ -173,25 +160,6 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
           if (duration > 0) {
             segmentDuration = duration;
             print('✅ 段 $i 使用 $_currentCamera 时长: ${segmentDuration}s');
-          }
-        }
-      }
-
-      // 最后尝试其他摄像头
-      if (segmentDuration == 60.0) {
-        print('⚠️ 段 $i qcamera和$_currentCamera都没有有效时长，尝试其他摄像头');
-        for (final camera in cameras.keys) {
-          if (camera == 'qcamera' || camera == _currentCamera.value) continue;
-
-          final otherCameraInfo = cameras[camera];
-          final otherVideoInfo = otherCameraInfo['video_info'];
-          if (otherVideoInfo != null && otherVideoInfo['duration'] != null) {
-            final otherDuration = (otherVideoInfo['duration'] as num).toDouble();
-            if (otherDuration > 0) {
-              segmentDuration = otherDuration;
-              print('✅ 段 $i 使用 $camera 时长: ${segmentDuration}s');
-              break;
-            }
           }
         }
       }
@@ -851,19 +819,19 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
                 ),
 
                 // 时间跳转按钮
-                ElevatedButton.icon(
-                  onPressed: () => _showTimeSeekDialog(),
-                  icon: const Icon(Icons.access_time, size: 18),
-                  label: const Text('跳转'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                ),
+//                 ElevatedButton.icon(
+//                   onPressed: () => _showTimeSeekDialog(),
+//                   icon: const Icon(Icons.access_time, size: 18),
+//                   label: const Text('跳转'),
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.blue[600],
+//                     foregroundColor: Colors.white,
+//                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(6),
+//                     ),
+//                   ),
+//                 ),
               ],
             ),
 

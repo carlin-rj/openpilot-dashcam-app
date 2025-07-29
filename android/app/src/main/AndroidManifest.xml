@@ -16,7 +16,7 @@
     <uses-feature android:glEsVersion="0x00020000" android:required="false" />
 
     <application
-        android:label="dashcam_viewer"
+        android:label="OpenpilotCam"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"

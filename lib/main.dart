@@ -39,7 +39,7 @@ void main() async {
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
-      title: 'OpenPilot Dashcam Viewer',
+      title: 'OpenpilotCam',
     );
 
     windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -70,7 +70,7 @@ class DashcamApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp.router(
-        title: 'OpenPilot 行车记录仪',
+        title: 'PilotCam',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF667eea),
