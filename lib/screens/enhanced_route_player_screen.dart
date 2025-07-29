@@ -919,6 +919,9 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
           // 开始时间标记行（进度条上方）
           _buildStartTimeMarkers(),
 
+          // 动态时间提示（仅在拖动时显示）
+          if (_isDragging) _buildDynamicTimeHint(),
+
           const SizedBox(height: 4),
 
           // 主进度条 - 显示总播放进度
@@ -1167,6 +1170,52 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
     );
   }
 
+  /// 构建动态时间提示（拖动时显示）
+  Widget _buildDynamicTimeHint() {
+    if (!_isDragging) return const SizedBox.shrink();
+
+    // 计算拖动位置对应的segment和时间
+    final dragSeconds = _dragPosition.inMilliseconds / 1000.0;
+    final result = _findTargetSegmentAndTime(dragSeconds);
+
+    if (result == null) return const SizedBox.shrink();
+
+    final segmentIndex = result['segmentIndex'] as int;
+    final segment = _routeDetail!.segments[segmentIndex];
+    final segmentTime = result['segmentTime'] as double;
+
+    // 计算实际时间
+    final baseTime = DateTime.parse(segment.timestamp);
+    final actualTime = baseTime.add(Duration(milliseconds: (segmentTime * 1000).round()));
+
+    return Container(
+      height: 30,
+      alignment: Alignment.center,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          '段${segmentIndex + 1} - ${DateFormat('MM-dd HH:mm:ss').format(actualTime)}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 构建开始时间标记行（进度条上方）
   Widget _buildStartTimeMarkers() {
     if (_routeDetail == null || _routeDetail!.segments.isEmpty) {
@@ -1199,10 +1248,22 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
   List<Widget> _buildStartTimeMarkerWidgets() {
     List<Widget> markers = [];
 
-    print('🔄 _buildStartTimeMarkerWidgets 被调用，segments数量: ${_routeDetail!.segments.length}');
+    final segmentCount = _routeDetail!.segments.length;
+    print('🔄 _buildStartTimeMarkerWidgets 被调用，segments数量: $segmentCount');
 
-    // 为每个segment添加开始时间标记
-    for (int i = 0; i < _routeDetail!.segments.length; i++) {
+    // 智能显示策略：6个以内全显示，超过6个才采样
+    final maxMarkers = 6;
+    final needSampling = segmentCount > maxMarkers;
+    final step = needSampling ? (segmentCount / maxMarkers).ceil() : 1;
+
+    if (needSampling) {
+      print('📱 移动端优化：segments过多($segmentCount个)，每${step}个显示一个时间标记');
+    } else {
+      print('📱 segments数量适中($segmentCount个)，全部显示时间标记');
+    }
+
+    // 显示时间标记
+    for (int i = 0; i < segmentCount; i += step) {
       if (i < _segmentStartTimes.length) {
         final segment = _routeDetail!.segments[i];
         final startTime = _segmentStartTimes[i];
@@ -1237,10 +1298,36 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
   List<Widget> _buildEndTimeMarkerWidgets() {
     List<Widget> markers = [];
 
-    print('🔄 _buildEndTimeMarkerWidgets 被调用，segments数量: ${_routeDetail!.segments.length}');
+    final segmentCount = _routeDetail!.segments.length;
+    print('🔄 _buildEndTimeMarkerWidgets 被调用，segments数量: $segmentCount');
 
-    // 为每个segment添加结束时间标记
-    for (int i = 0; i < _routeDetail!.segments.length; i++) {
+    // 智能显示策略：6个以内全显示，超过6个才采样
+    final maxMarkers = 6;
+    final needSampling = segmentCount > maxMarkers;
+    final step = needSampling ? (segmentCount / maxMarkers).ceil() : 1;
+
+    // 确定要显示的segment索引
+    final indicesToShow = <int>[];
+
+    if (needSampling) {
+      // 需要采样：显示关键的结束时间点
+      for (int i = step - 1; i < segmentCount; i += step) {
+        indicesToShow.add(i);
+      }
+      // 确保最后一个segment的结束时间总是显示
+      if (!indicesToShow.contains(segmentCount - 1)) {
+        indicesToShow.add(segmentCount - 1);
+      }
+      print('📱 结束时间采样显示: ${indicesToShow.map((i) => i + 1).toList()}');
+    } else {
+      // 不需要采样：显示所有结束时间
+      for (int i = 0; i < segmentCount; i++) {
+        indicesToShow.add(i);
+      }
+      print('📱 显示所有结束时间: ${indicesToShow.length}个');
+    }
+
+    for (int i in indicesToShow) {
       if (i < _segmentStartTimes.length) {
         final segment = _routeDetail!.segments[i];
 
