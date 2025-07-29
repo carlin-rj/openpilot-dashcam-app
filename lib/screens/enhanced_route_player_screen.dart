@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:intl/intl.dart';
 
 import '../providers/simple_dashcam_provider.dart';
 import '../models/dashcam_models.dart';
@@ -915,6 +916,11 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
+          // 开始时间标记行（进度条上方）
+          _buildStartTimeMarkers(),
+
+          const SizedBox(height: 4),
+
           // 主进度条 - 显示总播放进度
           Container(
             height: 60,
@@ -1129,6 +1135,11 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
             ),
           ),
 
+          const SizedBox(height: 4),
+
+          // 结束时间标记行（进度条下方）
+//           _buildEndTimeMarkers(),
+
           const SizedBox(height: 8),
 
           // 段信息显示
@@ -1153,6 +1164,176 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 构建开始时间标记行（进度条上方）
+  Widget _buildStartTimeMarkers() {
+    if (_routeDetail == null || _routeDetail!.segments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      height: 25,
+      child: Stack(
+        children: _buildStartTimeMarkerWidgets(),
+      ),
+    );
+  }
+
+  /// 构建结束时间标记行（进度条下方）
+  Widget _buildEndTimeMarkers() {
+    if (_routeDetail == null || _routeDetail!.segments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      height: 25,
+      child: Stack(
+        children: _buildEndTimeMarkerWidgets(),
+      ),
+    );
+  }
+
+  /// 构建开始时间标记组件列表
+  List<Widget> _buildStartTimeMarkerWidgets() {
+    List<Widget> markers = [];
+
+    print('🔄 _buildStartTimeMarkerWidgets 被调用，segments数量: ${_routeDetail!.segments.length}');
+
+    // 为每个segment添加开始时间标记
+    for (int i = 0; i < _routeDetail!.segments.length; i++) {
+      if (i < _segmentStartTimes.length) {
+        final segment = _routeDetail!.segments[i];
+        final startTime = _segmentStartTimes[i];
+
+        // 开始时间就是segment的timestamp
+        final actualStartTime = DateTime.parse(segment.timestamp);
+
+        // 计算开始位置在进度条中的比例
+        final startPosition = _virtualTotalDuration.inMilliseconds > 0
+            ? startTime.inMilliseconds / _virtualTotalDuration.inMilliseconds
+            : 0.0;
+
+        final progressBarWidth = MediaQuery.of(context).size.width - 32; // 减去margin
+
+        print('🟢 Segment $i 开始时间: ${DateFormat('MM-dd HH:mm:ss').format(actualStartTime)} at ${(startPosition * 100).toStringAsFixed(2)}%');
+
+        // 添加开始时间标记（绿色，向上显示）
+        markers.add(
+          Positioned(
+            left: startPosition * progressBarWidth,
+            bottom: 0, // 贴底部，向上显示
+            child: _buildTimeMarker(actualStartTime, isStart: true, isAbove: true),
+          ),
+        );
+      }
+    }
+
+    return markers;
+  }
+
+  /// 构建结束时间标记组件列表
+  List<Widget> _buildEndTimeMarkerWidgets() {
+    List<Widget> markers = [];
+
+    print('🔄 _buildEndTimeMarkerWidgets 被调用，segments数量: ${_routeDetail!.segments.length}');
+
+    // 为每个segment添加结束时间标记
+    for (int i = 0; i < _routeDetail!.segments.length; i++) {
+      if (i < _segmentStartTimes.length) {
+        final segment = _routeDetail!.segments[i];
+
+        // 结束时间是开始时间加上segment的duration
+        final actualEndTime = DateTime.parse(segment.timestamp).add(Duration(seconds: segment.duration));
+
+        // 计算结束位置在进度条中的比例
+        // 结束位置应该是当前段开始时间 + 当前段的实际播放时长
+        final startTime = _segmentStartTimes[i];
+        final segmentDuration = _segmentDurations[i]; // 使用实际的segment duration
+        final endTimeInVirtual = Duration(milliseconds: startTime.inMilliseconds + segmentDuration.inMilliseconds);
+
+        final endPosition = _virtualTotalDuration.inMilliseconds > 0
+            ? endTimeInVirtual.inMilliseconds / _virtualTotalDuration.inMilliseconds
+            : 0.0;
+
+        final progressBarWidth = MediaQuery.of(context).size.width - 32; // 减去margin
+
+        print('🔴 Segment $i 结束时间: ${DateFormat('MM-dd HH:mm:ss').format(actualEndTime)} at ${(endPosition * 100).toStringAsFixed(2)}%');
+        print('   虚拟开始: ${startTime.inMilliseconds}ms, 段时长: ${segmentDuration.inMilliseconds}ms, 虚拟结束: ${endTimeInVirtual.inMilliseconds}ms');
+
+        // 添加结束时间标记（红色，向下显示）
+        if (i == _routeDetail!.segments.length - 1) {
+          // 最后一段的结束时间标记，使用right定位确保可见
+          markers.add(
+            Positioned(
+              right: 0,
+              top: 0, // 贴顶部，向下显示
+              child: _buildTimeMarker(actualEndTime, isStart: false, isAbove: false),
+            ),
+          );
+        } else {
+          markers.add(
+            Positioned(
+              left: endPosition * progressBarWidth,
+              top: 0, // 贴顶部，向下显示
+              child: _buildTimeMarker(actualEndTime, isStart: false, isAbove: false),
+            ),
+          );
+        }
+      }
+    }
+
+    return markers;
+  }
+
+  /// 构建单个时间标记
+  Widget _buildTimeMarker(DateTime time, {required bool isStart, required bool isAbove}) {
+    final timeStr = DateFormat('MM-dd HH:mm:ss').format(time);
+    final typeStr = isStart ? '开始(绿)' : '结束(红)';
+    final positionStr = isAbove ? '上方' : '下方';
+    print('   🎯 创建时间标记: $typeStr - $timeStr - $positionStr');
+
+    // 根据位置决定组件顺序
+    final children = <Widget>[
+      // 时间文本
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(3),
+          border: Border.all(
+            color: isStart ? Colors.green : Colors.red,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          timeStr,
+          style: TextStyle(
+            fontSize: 9, // 稍微减小字体以适应新布局
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                color: isStart ? Colors.green : Colors.red,
+                blurRadius: 1,
+              ),
+            ],
+          ),
+        ),
+      ),
+      // 时间刻度线
+      Container(
+        width: 2,
+        height: 8, // 减小高度以适应新布局
+        color: isStart ? Colors.green : Colors.red,
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: isAbove ? children.reversed.toList() : children,
     );
   }
 
