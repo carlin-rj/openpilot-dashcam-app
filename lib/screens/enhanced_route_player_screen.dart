@@ -917,7 +917,7 @@ class _EnhancedRoutePlayerScreenState extends State<EnhancedRoutePlayerScreen> {
       child: Column(
         children: [
           // 开始时间标记行（进度条上方）
-          _buildStartTimeMarkers(),
+//           _buildStartTimeMarkers(),
 
           // 动态时间提示（仅在拖动时显示）
           if (_isDragging) _buildDynamicTimeHint(),
