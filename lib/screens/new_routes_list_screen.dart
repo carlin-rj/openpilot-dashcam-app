@@ -471,34 +471,75 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
         title: Text('${route.routeName} - 段列表'),
         content: SizedBox(
           width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: segments.length,
-            itemBuilder: (context, index) {
-              final segment = segments[index];
-              final totalSize = segment.size;
-              
-              return CheckboxListTile(
-                value: selectedSegments.contains(segment.segmentId),
-                onChanged: (bool? value) {
-                  setState(() {
-                    if (value == true) {
-                      selectedSegments.add(segment.segmentId);
-                    } else {
-                      selectedSegments.remove(segment.segmentId);
-                    }
-                  });
-                },
-                title: Text('段ID: ${segment.segmentId}'),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('时间: ${_formatTimeRange(segment.startTime, segment.endTime)}'),
-                    Text('大小: ${_formatFileSize(totalSize)}'),
-                  ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 添加全选和反选按钮
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        if (selectedSegments.length == segments.length) {
+                          selectedSegments.clear();
+                        } else {
+                          selectedSegments.addAll(
+                            segments.map((s) => s.segmentId)
+                          );
+                        }
+                      });
+                    },
+                    child: Text(
+                      selectedSegments.length == segments.length ? '取消全选' : '全选'
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        final allSegmentIds = segments.map((s) => s.segmentId).toSet();
+                        final toSelect = allSegmentIds.difference(selectedSegments);
+                        selectedSegments.clear();
+                        selectedSegments.addAll(toSelect);
+                      });
+                    },
+                    child: const Text('反选'),
+                  ),
+                ],
+              ),
+              const Divider(),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: segments.length,
+                  itemBuilder: (context, index) {
+                    final segment = segments[index];
+                    final totalSize = segment.size;
+                    
+                    return CheckboxListTile(
+                      value: selectedSegments.contains(segment.segmentId),
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            selectedSegments.add(segment.segmentId);
+                          } else {
+                            selectedSegments.remove(segment.segmentId);
+                          }
+                        });
+                      },
+                      title: Text('段ID: ${segment.segmentId}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('时间: ${_formatTimeRange(segment.startTime, segment.endTime)}'),
+                          Text('大小: ${_formatFileSize(totalSize)}'),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
         actions: [
