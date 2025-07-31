@@ -9,6 +9,11 @@ on:
   push:
     tags:
       - 'v*.*.*' 
+
+# 添加权限配置
+permissions:
+  contents: write  # 允许写入仓库内容和创建release
+  
 jobs:
   build:
     runs-on: ubuntu-latest
