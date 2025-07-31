@@ -423,24 +423,45 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
     );
   }
 
-  // 添加删除段的方法
-  Future<void> _deleteSegments(RouteInfo route) async {
-    final provider = context.read<SimpleDashcamProvider>();
-    final segments = await provider.getRouteSegments(route.routeName);
-    
-    if (segments == null || segments.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('没有找到可删除的段')),
-      );
-      return;
-    }
+  // 在类的开头添加一个变量来跟踪删除操作状态
+  bool _isDeleting = false;
 
-    showDialog(
-      context: context,
-      builder: (context) => _buildSegmentsDialog(route, segments),
-    );
+  // 修改删除段的方法，添加防抖动处理
+  Future<void> _deleteSegments(RouteInfo route) async {
+    if (_isDeleting) return; // 如果正在删除，直接返回
+    
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      final provider = context.read<SimpleDashcamProvider>();
+      final segments = await provider.getRouteSegments(route.routeName);
+      
+      if (segments == null || segments.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('没有找到可删除的段')),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => _buildSegmentsDialog(route, segments),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDeleting = false;
+        });
+      }
+    }
   }
 
+  // 修改按钮部分的代码，改为水平排列
+  // 在 _buildRouteItem 方法中，修改最后的按钮部分
   // 构建段列表对话框
   Widget _buildSegmentsDialog(RouteInfo route, List<SegmentInfo> segments) {
     final selectedSegments = <String>{};  // 用于存储选中的段ID
@@ -601,7 +622,7 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
                 ),
 
                 // Play button and settings
-                Column(
+                Row(
                   children: [
                     Container(
                       width: 48,
@@ -610,13 +631,16 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
                         color: const Color(0xFF6366f1),
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      child: const Icon(
-                        Icons.play_arrow,
-                        color: Colors.white,
-                        size: 24,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        onPressed: () => _playRoute(route),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(width: 8),
                     Container(
                       width: 48,
                       height: 48,
@@ -630,7 +654,7 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
                           color: Colors.white,
                           size: 24,
                         ),
-                        onPressed: () => _deleteSegments(route),
+                        onPressed: _isDeleting ? null : () => _deleteSegments(route),
                       ),
                     ),
                   ],
