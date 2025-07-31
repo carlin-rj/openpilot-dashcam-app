@@ -433,214 +433,204 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
   }
 
   Widget _buildSegmentsDialog(RouteInfo route) {
+    return FutureBuilder<List<SegmentInfo>?>(
+      future: context.read<SimpleDashcamProvider>().getRouteSegments(route.routeName),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const AlertDialog(
+            content: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('正在加载段列表...'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return AlertDialog(
+            content: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text('加载失败: ${snapshot.error}'),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('关闭'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final segments = snapshot.data;
+        if (segments == null || segments.isEmpty) {
+          return AlertDialog(
+            content: Center(
+              child: Text('没有找到可删除的段'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('关闭'),
+              ),
+            ],
+          );
+        }
+
+        // 只有在成功加载数据后才创建StatefulBuilder
+        return _buildSegmentsDialogContent(context, segments, route);
+      },
+    );
+  }
+
+  Widget _buildSegmentsDialogContent(BuildContext context, List<SegmentInfo> segments, RouteInfo route) {
+    // 将选择状态提升到方法级别，使所有嵌套组件都能访问同一个状态
+    final selectedSegments = <String>{};
+    bool isDeleting = false;
+    
     return StatefulBuilder(
-      builder: (context, setState) {
+      builder: (context, setDialogState) {
         return AlertDialog(
           title: Text('${route.routeName} - 段列表'),
-          content: FutureBuilder<List<SegmentInfo>?>(
-            future: context.read<SimpleDashcamProvider>().getRouteSegments(route.routeName),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('正在加载段列表...'),
-                    ],
-                  ),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      SizedBox(height: 16),
-                      Text('加载失败: ${snapshot.error}'),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('关闭'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final segments = snapshot.data;
-              if (segments == null || segments.isEmpty) {
-                return const Center(
-                  child: Text('没有找到可删除的段'),
-                );
-              }
-
-              // 在这里定义变量，使其在FutureBuilder的builder作用域内
-              final selectedSegments = <String>{};
-              bool isDeleting = false;
-
-              return StatefulBuilder(
-                builder: (context, setInnerState) => SizedBox(
-                  width: double.maxFinite,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 添加全选和反选按钮
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          TextButton(
-                            onPressed: isDeleting ? null : () {
-                              setInnerState(() {
-                                if (selectedSegments.length == segments.length) {
-                                  selectedSegments.clear();
-                                } else {
-                                  selectedSegments.addAll(
-                                    segments.map((s) => s.segmentId)
-                                  );
-                                }
-                              });
-                            },
-                            child: Text(
-                              selectedSegments.length == segments.length ? '取消全选' : '全选'
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: isDeleting ? null : () {
-                              setInnerState(() {
-                                final allSegmentIds = segments.map((s) => s.segmentId).toSet();
-                                final toSelect = allSegmentIds.difference(selectedSegments);
-                                selectedSegments.clear();
-                                selectedSegments.addAll(toSelect);
-                              });
-                            },
-                            child: const Text('反选'),
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      Flexible(
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: segments.length,
-                          itemBuilder: (context, index) {
-                            final segment = segments[index];
-                            final totalSize = segment.size;
-                            
-                            return CheckboxListTile(
-                              value: selectedSegments.contains(segment.segmentId),
-                              onChanged: isDeleting ? null : (bool? value) {
-                                setInnerState(() {
-                                  if (value == true) {
-                                    selectedSegments.add(segment.segmentId);
-                                  } else {
-                                    selectedSegments.remove(segment.segmentId);
-                                  }
-                                });
-                              },
-                              title: Text('段ID: ${segment.segmentId}'),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('时间: ${_formatTimeRange(segment.startTime, segment.endTime)}'),
-                                  Text('大小: ${_formatFileSize(totalSize)}'),
-                                ],
-                              ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 添加全选和反选按钮
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: isDeleting ? null : () {
+                        setDialogState(() {
+                          if (selectedSegments.length == segments.length) {
+                            selectedSegments.clear();
+                          } else {
+                            selectedSegments.addAll(
+                              segments.map((s) => s.segmentId)
                             );
-                          },
-                        ),
+                          }
+                        });
+                      },
+                      child: Text(
+                        selectedSegments.length == segments.length ? '取消全选' : '全选'
                       ),
-                      if (isDeleting)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Column(
-                            children: [
-                              CircularProgressIndicator(),
-                              SizedBox(height: 16),
-                              Text('正在删除...'),
-                            ],
-                          ),
+                    ),
+                    TextButton(
+                      onPressed: isDeleting ? null : () {
+                        setDialogState(() {
+                          final allSegmentIds = segments.map((s) => s.segmentId).toSet();
+                          final toSelect = allSegmentIds.difference(selectedSegments);
+                          selectedSegments.clear();
+                          selectedSegments.addAll(toSelect);
+                        });
+                      },
+                      child: const Text('反选'),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: segments.length,
+                    itemBuilder: (context, index) {
+                      final segment = segments[index];
+                      final totalSize = segment.size;
+                      
+                      return CheckboxListTile(
+                        value: selectedSegments.contains(segment.segmentId),
+                        onChanged: isDeleting ? null : (bool? value) {
+                          setDialogState(() {
+                            if (value == true) {
+                              selectedSegments.add(segment.segmentId);
+                            } else {
+                              selectedSegments.remove(segment.segmentId);
+                            }
+                          });
+                        },
+                        title: Text('段ID: ${segment.segmentId}'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('时间: ${_formatTimeRange(segment.startTime, segment.endTime)}'),
+                            Text('大小: ${_formatFileSize(totalSize)}'),
+                          ],
                         ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-              );
-            },
+                if (isDeleting)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('正在删除...'),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: isDeleting ? null : () => Navigator.pop(context),
               child: const Text('取消'),
             ),
-            Builder(
-              builder: (context) {
-                // 这里需要访问FutureBuilder的snapshot，但它在这个作用域外
-                // 需要重新获取数据或重构代码结构
-                return Consumer<SimpleDashcamProvider>(
-                  builder: (context, provider, _) {
-                    return FutureBuilder<List<SegmentInfo>?>(
-                      future: provider.getRouteSegments(route.routeName),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-                          return const SizedBox();
+            ElevatedButton(
+              onPressed: isDeleting || selectedSegments.isEmpty
+                  ? null
+                  : () async {
+                      setDialogState(() => isDeleting = true);
+                      final provider = context.read<SimpleDashcamProvider>();
+                      try {
+                        await provider.deleteSegments(selectedSegments.toList());
+                        if (mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('删除成功')),
+                          );
+                          _refreshData();
                         }
-                        
-                        return StatefulBuilder(
-                          builder: (context, setActionState) {
-                            bool isDeleting = false;
-                            final selectedSegments = <String>{};
-                            
-                            return ElevatedButton(
-                              onPressed: isDeleting || selectedSegments.isEmpty
-                                  ? null
-                                  : () async {
-                                      setActionState(() => isDeleting = true);
-                                      try {
-                                        await provider.deleteSegments(selectedSegments.toList());
-                                        if (mounted) {
-                                          Navigator.pop(context);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('删除成功')),
-                                          );
-                                          _refreshData();
-                                        }
-                                      } catch (e) {
-                                        if (mounted) {
-                                          setActionState(() => isDeleting = false);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('删除失败: $e')),
-                                          );
-                                        }
-                                      }
-                                    },
-                              child: isDeleting
-                                  ? const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text('删除中...'),
-                                      ],
-                                    )
-                                  : const Text('删除所选'),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                );
-              },
+                      } catch (e) {
+                        if (mounted) {
+                          setDialogState(() => isDeleting = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('删除失败: $e')),
+                          );
+                        }
+                      }
+                    },
+              child: isDeleting
+                  ? const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text('删除中...'),
+                      ],
+                    )
+                  : const Text('删除所选'),
             ),
           ],
         );
