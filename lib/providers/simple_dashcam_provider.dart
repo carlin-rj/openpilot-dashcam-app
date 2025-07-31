@@ -160,4 +160,18 @@ class SimpleDashcamProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
+
+  Future<List<SegmentInfo>?> getRouteSegments(String routeName) async {
+    try {
+      final routeDetail = await _apiService.getRouteDetail(routeName);
+      return routeDetail.segments;
+    } catch (e) {
+      _logger.e('获取路线段列表失败', error: e);
+      return null;
+    }
+  }
+
+  Future<void> deleteSegments(List<String> segmentIds) async {
+    await _apiService.deleteSegments(segmentIds);
+  }
 }

@@ -423,6 +423,98 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
     );
   }
 
+  // 添加删除段的方法
+  Future<void> _deleteSegments(RouteInfo route) async {
+    final provider = context.read<SimpleDashcamProvider>();
+    final segments = await provider.getRouteSegments(route.routeName);
+    
+    if (segments == null || segments.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('没有找到可删除的段')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => _buildSegmentsDialog(route, segments),
+    );
+  }
+
+  // 构建段列表对话框
+  Widget _buildSegmentsDialog(RouteInfo route, List<SegmentInfo> segments) {
+    final selectedSegments = <String>{};  // 用于存储选中的段ID
+
+    return StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: Text('${route.routeName} - 段列表'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: segments.length,
+            itemBuilder: (context, index) {
+              final segment = segments[index];
+              final totalSize = segment.size;
+              
+              return CheckboxListTile(
+                value: selectedSegments.contains(segment.segmentId),
+                onChanged: (bool? value) {
+                  setState(() {
+                    if (value == true) {
+                      selectedSegments.add(segment.segmentId);
+                    } else {
+                      selectedSegments.remove(segment.segmentId);
+                    }
+                  });
+                },
+                title: Text('段ID: ${segment.segmentId}'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('时间: ${_formatTimeRange(segment.startTime, segment.endTime)}'),
+                    Text('大小: ${_formatFileSize(totalSize)}'),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: selectedSegments.isEmpty
+                ? null
+                : () async {
+                    Navigator.pop(context);
+                    final provider = context.read<SimpleDashcamProvider>();
+                    try {
+                      await provider.deleteSegments(selectedSegments.toList());
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('删除成功')),
+                        );
+                        _refreshData();
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('删除失败: $e')),
+                        );
+                      }
+                    }
+                  },
+            child: const Text('删除所选'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 修改路线列表项的构建方法，添加删除按钮
   Widget _buildRouteItem(RouteInfo route) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -522,6 +614,23 @@ class _NewRoutesListScreenState extends State<NewRoutesListScreen> {
                         Icons.play_arrow,
                         color: Colors.white,
                         size: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        onPressed: () => _deleteSegments(route),
                       ),
                     ),
                   ],

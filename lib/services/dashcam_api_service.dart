@@ -210,6 +210,18 @@ class DashcamApiService {
       throw ApiException('获取路线视频段信息失败: ${e.message}');
     }
   }
+
+  /// 批量删除视频段
+  Future<void> deleteSegments(List<String> segmentIds) async {
+    try {
+      await _dio.post('/api/segments/delete', data: {
+        'segment_ids': segmentIds,
+      });
+    } on DioException catch (e) {
+      _logger.e('删除视频段失败: ${e.message}');
+      throw ApiException('删除视频段失败: ${e.message}');
+    }
+  }
 }
 
 class ApiException implements Exception {
